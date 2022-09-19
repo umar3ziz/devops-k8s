@@ -1,0 +1,26 @@
+name: helm-odoo
+namespace: odoo-local
+deployment:
+  name: odoo
+  image: "odoo"
+  tag: "15.0"
+  port: 8069
+  replicas: 2
+  hostPath: true
+  path: "/work/mount"
+  nodeAffinityKey: kubernetes.io/hostname
+  nodeAffinityNode: helm-control-plane
+
+statefulset:
+  name: postgres
+  image: "postgres"
+  tag: "12"
+  port: 5432
+  replicas: 2
+  hostPath: true
+  path: "/work/mount"
+  nodeAffinityKey: kubernetes.io/hostname
+  nodeAffinityNode: helm-control-plane
+
+postgres:
+  host: postgres-service

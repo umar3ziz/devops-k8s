@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-config-file
+  namespace: {{ .Values.namespace }}
+data:
+  odoo.conf: |
+    [options]
+    addons_path = /mnt/odoo-enterprise,/mnt/extra-addons
+    data_dir = /var/lib/odoo
+    db_password = odoo
+    db_port = 5432
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-configmap
+  namespace: {{ .Values.namespace }}
+data:
+  POSTGRES_DB: postgres
+  PGDATA: /var/lib/postgresql/data/pgdata

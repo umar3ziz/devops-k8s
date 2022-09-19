@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: db-local-pv
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: db-local-sc
+  {{- if .Values.deployment.hostPath }}
+  local:
+    path: {{ .Values.deployment.path }}
+  nodeAffinity: # nodeAffinity is required when using local volumes.
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: {{ .Values.deployment.nodeAffinityKey }}
+          operator: In
+          values:
+          - {{ .Values.deployment.nodeAffinityNode }}
+  {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: odoo-local-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: odoo-local-sc
+  {{- if .Values.statefulset.hostPath }}
+  local:
+    path: {{ .Values.statefulset.path }}
+  nodeAffinity: # nodeAffinity is required when using local volumes.
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: {{ .Values.statefulset.nodeAffinityKey }}
+          operator: In
+          values:
+          - {{ .Values.statefulset.nodeAffinityNode }}
+  {{- end }}

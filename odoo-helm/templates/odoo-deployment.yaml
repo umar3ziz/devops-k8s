@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+    sector: {{ .Values.deployment.name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      sector: {{ .Values.deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        sector: {{ .Values.deployment.name }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+    spec:
+      {{- if .Values.deployment.hostPath }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.deployment.nodeAffinityKey }}
+                operator: In
+                values:
+                - {{ .Values.deployment.nodeAffinityNode }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.deployment.name }}
+        image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{ .Values.deployment.port }}
+#        command:
+#          - sh
+#        args:
+#          - -c
+#          - pip3 install --upgrade pip
+#            ; pip3 install -r /mnt/odoo/requirements.txt
+        env:
+          - name: HOST
+            value: {{ .Values.postgres.host }}
+          - name: USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_USER
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+#        imagePullSecrets:
+#        - name: docker-credentials
+        volumeMounts:
+          - name: odoo-persistent-storage
+            mountPath: /var/lib/odoo
+          - name: config-file
+            mountPath: /etc/odoo
+          - name: odoo-project
+            mountPath: /mnt/odoo
+          - name: odoo-ee
+            mountPath: /mnt/odoo-enterprise
+      volumes:
+        - name: config-file
+          configMap:
+            name: project-config-file
+            defaultMode: 0775
+        - name: git-secret
+          secret:
+            secretName: git-credentials
+            defaultMode: 0400
+        - name: odoo-project
+          emptyDir: { }
+        - name: odoo-ee
+          emptyDir: { }
+        - name: odoo-persistent-storage
+#          emptyDir: { }
+          persistentVolumeClaim:
+            claimName: odoo-pvc-claim

@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet                                # Type of the kubernetes resource
+metadata:
+  name: {{ .Values.statefulset.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+    sector: {{ .Values.statefulset.name }}
+spec:
+  serviceName: {{ .Values.postgres.host }}
+  replicas: {{ .Values.statefulset.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      sector: {{ .Values.statefulset.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        sector: {{ .Values.statefulset.name }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+    spec:
+      {{- if .Values.statefulset.hostPath }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.statefulset.nodeAffinityKey }}
+                operator: In
+                values:
+                - {{ .Values.statefulset.nodeAffinityNode }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.statefulset.name }}
+        image: {{ .Values.statefulset.image }}:{{ .Values.statefulset.tag }}
+#        command: [ "sh", "-c", "sleep 84000s"]
+        ports:
+        - containerPort: {{ .Values.statefulset.port }}
+        env:
+        - name: PGDATA
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-configmap
+              key: PGDATA
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-configmap
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+          - mountPath: /var/lib/postgresql/data
+            name: postgres-persistent-storage # This name should match the name specified in `volumes.name`
+      volumes:                                      # A PersistentVolume is mounted as a volume to the Pod
+        - name: postgres-persistent-storage
+          persistentVolumeClaim:
+            claimName: db-pvc-claim
