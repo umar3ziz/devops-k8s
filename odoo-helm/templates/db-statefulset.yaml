@@ -64,5 +64,6 @@ spec:
             name: postgres-persistent-storage # This name should match the name specified in `volumes.name`
       volumes:                                      # A PersistentVolume is mounted as a volume to the Pod
         - name: postgres-persistent-storage
-          persistentVolumeClaim:
-            claimName: db-pvc-claim
+          emptyDir: { }
+#          persistentVolumeClaim:
+#            claimName: db-pvc-claim

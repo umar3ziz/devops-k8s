@@ -81,6 +81,6 @@ spec:
         - name: odoo-ee
           emptyDir: { }
         - name: odoo-persistent-storage
-#          emptyDir: { }
-          persistentVolumeClaim:
-            claimName: odoo-pvc-claim
+          emptyDir: { }
+#          persistentVolumeClaim:
+#            claimName: odoo-pvc-claim
